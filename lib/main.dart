@@ -1,90 +1,106 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:usb_serial/usb_serial.dart';
+import 'dart:typed_data';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
-class MyApp extends StatefulWidget {
-  const MyApp({super.key});
-
-  @override
-  State<MyApp> createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  List<UsbDevice> devices = [];
+class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('USB Printer Example'),
-        ),
-        body: Center(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                onPressed: () async {
-                  List<UsbDevice> devices = await UsbSerial.listDevices();
-                  setState(() {
-                    this.devices = devices;
-                  });
-                  print(devices);
-
-                  UsbPort port;
-                  if (devices.isEmpty) {
-                    return;
-                  }
-                  port = (await devices[0].create())!;
-
-                  bool openResult = await port.open();
-                  if (!openResult) {
-                    print("Failed to open");
-                    return;
-                  }
-
-                  await port.setDTR(true);
-                  await port.setRTS(true);
-
-                  port.setPortParameters(001, UsbPort.DATABITS_8,
-                      UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
-
-                  // print first result and close port.
-                  port.inputStream?.listen((Uint8List event) {
-                    print(event);
-                    port.close();
-                  });
-
-                  await port.write(Uint8List.fromList([0x001, 0x003]));
-                },
-                child: const Text('Print'),
-              ),
-              if (devices.isEmpty) const Text("empye"),
-              if (devices.isNotEmpty)
-                ...List.generate(
-                  devices.length,
-                  (index) {
-                    return Text(devices[index].deviceName);
-                  },
-                )
-            ],
-          ),
-        ),
-      ),
+      home: PrinterSelectionScreen(),
     );
   }
 }
 
-class UsbPrinter {
-  static const MethodChannel _channel = MethodChannel('usb_printer');
+class PrinterSelectionScreen extends StatefulWidget {
+  @override
+  _PrinterSelectionScreenState createState() => _PrinterSelectionScreenState();
+}
 
-  static Future<String?> printText(String text) async {
-    final String? result =
-        await _channel.invokeMethod('printText', {'data': text});
-    return result;
+class _PrinterSelectionScreenState extends State<PrinterSelectionScreen> {
+  List<UsbDevice> devices = [];
+  UsbDevice? selectedDevice;
+
+  @override
+  void initState() {
+    super.initState();
+    _listDevices();
+  }
+
+  Future<void> _listDevices() async {
+    List<UsbDevice> devices = await UsbSerial.listDevices();
+    setState(() {
+      this.devices = devices;
+    });
+  }
+
+  Future<void> _printText(UsbDevice device) async {
+    UsbPort? port = await device.create();
+    if (port == null) {
+      print("Failed to create port");
+      return;
+    }
+
+    bool openResult = await port.open();
+    if (!openResult) {
+      print("Failed to open port");
+      return;
+    }
+
+    await port.setDTR(true);
+    await port.setRTS(true);
+
+    port.setPortParameters(9600, UsbPort.DATABITS_8,
+        UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
+
+    port.inputStream?.listen((Uint8List event) {
+      print(event);
+      port.close();
+    });
+
+    String text = "Hello, USB Printer!";
+    List<int> bytes = text.codeUnits;
+    await port.write(Uint8List.fromList(bytes));
+    await port.close();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('USB Printer Selection'),
+      ),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            DropdownButton<UsbDevice>(
+              hint: Text("Select a printer"),
+              value: selectedDevice,
+              onChanged: (UsbDevice? newValue) {
+                setState(() {
+                  selectedDevice = newValue;
+                });
+              },
+              items: devices.map((UsbDevice device) {
+                return DropdownMenuItem<UsbDevice>(
+                  value: device,
+                  child: Text(device.productName ?? 'Unknown Device'),
+                );
+              }).toList(),
+            ),
+            ElevatedButton(
+              onPressed: selectedDevice == null
+                  ? null
+                  : () => _printText(selectedDevice!),
+              child: const Text('Print'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
