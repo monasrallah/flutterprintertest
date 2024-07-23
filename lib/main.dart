@@ -10,19 +10,18 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: PrinterSelectionScreen(),
+      home: PrinterScreen(),
     );
   }
 }
 
-class PrinterSelectionScreen extends StatefulWidget {
+class PrinterScreen extends StatefulWidget {
   @override
-  _PrinterSelectionScreenState createState() => _PrinterSelectionScreenState();
+  _PrinterScreenState createState() => _PrinterScreenState();
 }
 
-class _PrinterSelectionScreenState extends State<PrinterSelectionScreen> {
-  List<UsbDevice> devices = [];
-  UsbDevice? selectedDevice;
+class _PrinterScreenState extends State<PrinterScreen> {
+  UsbDevice? targetPrinter;
 
   @override
   void initState() {
@@ -33,20 +32,27 @@ class _PrinterSelectionScreenState extends State<PrinterSelectionScreen> {
   Future<void> _listDevices() async {
     List<UsbDevice> devices = await UsbSerial.listDevices();
     setState(() {
-      this.devices = devices;
+      targetPrinter = devices.firstWhere(
+        (device) => device.productName == "PP-7600 Thermal Printer",
+      );
     });
   }
 
-  Future<void> _printText(UsbDevice device) async {
-    UsbPort? port = await device.create();
+  Future<void> _printReceipt() async {
+    if (targetPrinter == null) {
+      _showSnackBar("PP-7600 Thermal Printer not found");
+      return;
+    }
+
+    UsbPort? port = await targetPrinter!.create();
     if (port == null) {
-      print("Failed to create port");
+      _showSnackBar("Failed to create port");
       return;
     }
 
     bool openResult = await port.open();
     if (!openResult) {
-      print("Failed to open port");
+      _showSnackBar("Failed to open port");
       return;
     }
 
@@ -57,48 +63,54 @@ class _PrinterSelectionScreenState extends State<PrinterSelectionScreen> {
         UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
 
     port.inputStream?.listen((Uint8List event) {
-      print(event);
+      _showSnackBar("Received data: $event");
       port.close();
     });
 
-    String text = "Hello, USB Printer!";
-    List<int> bytes = text.codeUnits;
+    List<int> bytes = [];
+    bytes.addAll("POS Store\n".codeUnits);
+    bytes.addAll("NO:12345678\nTel:(02)2299-1599\n\n".codeUnits);
+    bytes.addAll("                                2013-01-01 13:33\n".codeUnits);
+    bytes.addAll("Store No:0001                  ECR No:0001\n".codeUnits);
+    bytes.addAll("Cashier No:0001                Vou No:0003\n\n".codeUnits);
+    bytes.addAll("Grilled Onion Cheese Burger        \$4.0 TX\n".codeUnits);
+    bytes.addAll("Mac Chicken meal                   \$2.0 TX\n".codeUnits);
+    bytes.addAll("Red tea                            \$3.0 TX\n".codeUnits);
+    bytes.addAll("Veggie                             \$3.0 TX\n".codeUnits);
+
+    for (int i = 0; i < 41; i++) {
+      bytes.addAll(
+          "Vegetable juice ${i + 1}                 \$1.0 TX\n".codeUnits);
+    }
+
+    bytes.addAll("\n".codeUnits);
+    bytes.addAll("Total:                        \$53.0 dollar\n".codeUnits);
+
+    // Add the paper cut command
+    bytes.addAll([0x1D, 0x56, 0x41, 0x10]);
+
     await port.write(Uint8List.fromList(bytes));
     await port.close();
+
+    _showSnackBar("Receipt printed and paper cut successfully");
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('USB Printer Selection'),
+        title: Text('USB Printer Test'),
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            DropdownButton<UsbDevice>(
-              hint: Text("Select a printer"),
-              value: selectedDevice,
-              onChanged: (UsbDevice? newValue) {
-                setState(() {
-                  selectedDevice = newValue;
-                });
-              },
-              items: devices.map((UsbDevice device) {
-                return DropdownMenuItem<UsbDevice>(
-                  value: device,
-                  child: Text(device.productName ?? 'Unknown Device'),
-                );
-              }).toList(),
-            ),
-            ElevatedButton(
-              onPressed: selectedDevice == null
-                  ? null
-                  : () => _printText(selectedDevice!),
-              child: const Text('Print'),
-            ),
-          ],
+        child: ElevatedButton(
+          onPressed: _printReceipt,
+          child: const Text('Print Receipt'),
         ),
       ),
     );
