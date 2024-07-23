@@ -3,19 +3,23 @@ import 'package:usb_serial/usb_serial.dart';
 import 'dart:typed_data';
 
 void main() {
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       home: PrinterScreen(),
     );
   }
 }
 
 class PrinterScreen extends StatefulWidget {
+  const PrinterScreen({super.key});
+
   @override
   _PrinterScreenState createState() => _PrinterScreenState();
 }
@@ -59,8 +63,8 @@ class _PrinterScreenState extends State<PrinterScreen> {
     await port.setDTR(true);
     await port.setRTS(true);
 
-    port.setPortParameters(9600, UsbPort.DATABITS_8,
-        UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
+    port.setPortParameters(
+        9600, UsbPort.DATABITS_8, UsbPort.STOPBITS_1, UsbPort.PARITY_NONE);
 
     port.inputStream?.listen((Uint8List event) {
       _showSnackBar("Received data: $event");
@@ -70,7 +74,8 @@ class _PrinterScreenState extends State<PrinterScreen> {
     List<int> bytes = [];
     bytes.addAll("POS Store\n".codeUnits);
     bytes.addAll("NO:12345678\nTel:(02)2299-1599\n\n".codeUnits);
-    bytes.addAll("                                2013-01-01 13:33\n".codeUnits);
+    bytes
+        .addAll("                                2013-01-01 13:33\n".codeUnits);
     bytes.addAll("Store No:0001                  ECR No:0001\n".codeUnits);
     bytes.addAll("Cashier No:0001                Vou No:0003\n\n".codeUnits);
     bytes.addAll("Grilled Onion Cheese Burger        \$4.0 TX\n".codeUnits);
@@ -105,7 +110,7 @@ class _PrinterScreenState extends State<PrinterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('USB Printer Test'),
+        title: const Text('USB Printer Test'),
       ),
       body: Center(
         child: ElevatedButton(
