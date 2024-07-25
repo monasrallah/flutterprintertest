@@ -24,7 +24,7 @@ class PrinterScreen extends StatefulWidget {
   const PrinterScreen({super.key});
 
   @override
-  _PrinterScreenState createState() => _PrinterScreenState();
+  State<PrinterScreen> createState() => _PrinterScreenState();
 }
 
 class _PrinterScreenState extends State<PrinterScreen> {
