@@ -91,18 +91,11 @@ class _PrinterScreenState extends State<PrinterScreen> {
       bytes += printer.imageRaster(logo, align: PosAlign.center);
     }
 
-    bytes.addAll(printer.text('POS Store',
-        styles: const PosStyles(
-            align: PosAlign.center,
-            height: PosTextSize.size2,
-            width: PosTextSize.size2)));
-    bytes.addAll(printer.text('NO:12345678',
-        styles: const PosStyles(align: PosAlign.center)));
-    bytes.addAll(printer.text('Tel:(02)2299-1599\n\n',
-        styles: const PosStyles(align: PosAlign.center)));
-    bytes.addAll(printer.text('                                2013-01-01 13:33'));
+    bytes.addAll(
+        printer.text('                                2013-01-01 13:33'));
     bytes.addAll(printer.text('Store No:0001                  ECR No:0001'));
-    bytes.addAll(printer.text('Cashier No:0001                Vou No:0003\n\n'));
+    bytes
+        .addAll(printer.text('Cashier No:0001                Vou No:0003\n\n'));
     bytes.addAll(printer.text('Grilled Onion Cheese Burger        \$4.0 TX'));
     bytes.addAll(printer.text('Mac Chicken meal                   \$2.0 TX'));
     bytes.addAll(printer.text('Red tea                            \$3.0 TX'));
@@ -116,13 +109,12 @@ class _PrinterScreenState extends State<PrinterScreen> {
     bytes.addAll(printer.text('\n'));
     bytes.addAll(printer.text('Total:                        \$53.0 dollar'));
 
-    // Add the paper cut command before adding the QR code
-    bytes.addAll(printer.cut());
-
     // Add QR code at the bottom
     bytes.addAll(printer.qrcode('https://www.example.com', size: QRSize.Size4));
 
     await port.write(Uint8List.fromList(bytes));
+    // Add the paper cut command before adding the QR code
+    bytes.addAll(printer.cut());
     await port.close();
 
     _showSnackBar("Receipt printed and paper cut successfully");
