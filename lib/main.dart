@@ -24,7 +24,7 @@ class PrinterScreen extends StatefulWidget {
   const PrinterScreen({super.key});
 
   @override
-  _PrinterScreenState createState() => _PrinterScreenState();
+  State<PrinterScreen> createState() => _PrinterScreenState();
 }
 
 class _PrinterScreenState extends State<PrinterScreen> {
@@ -101,7 +101,7 @@ class _PrinterScreenState extends State<PrinterScreen> {
     bytes.addAll(printer.text('Red tea                            \$3.0 TX'));
     bytes.addAll(printer.text('Veggie                             \$3.0 TX'));
 
-    for (int i = 0; i < 41; i++) {
+    for (int i = 0; i < 10; i++) {
       bytes.addAll(
           printer.text('Vegetable juice ${i + 1}                 \$1.0 TX'));
     }
