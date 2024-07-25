@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:usb_serial/usb_serial.dart';
 import 'dart:typed_data';
+
 import 'package:flutter/services.dart' show rootBundle;
-import 'package:image/image.dart' as img;
-import 'package:flutter_esc_pos_utils/flutter_esc_pos_utils.dart';
 
 void main() {
   runApp(const MyApp());
@@ -24,7 +23,7 @@ class PrinterScreen extends StatefulWidget {
   const PrinterScreen({super.key});
 
   @override
-  State<PrinterScreen> createState() => _PrinterScreenState();
+  _PrinterScreenState createState() => _PrinterScreenState();
 }
 
 class _PrinterScreenState extends State<PrinterScreen> {
@@ -45,10 +44,15 @@ class _PrinterScreenState extends State<PrinterScreen> {
     });
   }
 
-  Future<img.Image?> _loadImageAsset(String path) async {
-    final ByteData data = await rootBundle.load(path);
-    final Uint8List bytes = data.buffer.asUint8List();
-    return img.decodeImage(bytes);
+  Future<List<int>> imageToBytes(String imagePath) async {
+    // Load image as ByteData
+    ByteData byteData = await rootBundle.load(imagePath);
+
+    // Convert ByteData to Uint8List
+    Uint8List imageBytes = byteData.buffer.asUint8List();
+
+    // Convert Uint8List to List<int>
+    return imageBytes.toList();
   }
 
   Future<void> _printReceipt() async {
@@ -80,41 +84,34 @@ class _PrinterScreenState extends State<PrinterScreen> {
       port.close();
     });
 
-    final profile = await CapabilityProfile.load();
-    final printer = Generator(PaperSize.mm80, profile);
-
     List<int> bytes = [];
-
-    // Load and add logo at the top
-    final img.Image? logo = await _loadImageAsset('assets/logo.png');
-    if (logo != null) {
-      bytes += printer.imageRaster(logo, align: PosAlign.center);
-    }
-
-    bytes.addAll(
-        printer.text('                                2013-01-01 13:33'));
-    bytes.addAll(printer.text('Store No:0001                  ECR No:0001'));
+    bytes.addAll(await imageToBytes('assets/logo.png'));
+    bytes.addAll("\n ".codeUnits);
+    bytes.addAll("\n ".codeUnits);
+    bytes.addAll("\n ".codeUnits);
+    bytes.addAll("POS Store\n".codeUnits);
+    bytes.addAll("NO:12345678\nTel:(02)2299-1599\n\n".codeUnits);
     bytes
-        .addAll(printer.text('Cashier No:0001                Vou No:0003\n\n'));
-    bytes.addAll(printer.text('Grilled Onion Cheese Burger        \$4.0 TX'));
-    bytes.addAll(printer.text('Mac Chicken meal                   \$2.0 TX'));
-    bytes.addAll(printer.text('Red tea                            \$3.0 TX'));
-    bytes.addAll(printer.text('Veggie                             \$3.0 TX'));
+        .addAll("                                2013-01-01 13:33\n".codeUnits);
+    bytes.addAll("Store No:0001                  ECR No:0001\n".codeUnits);
+    bytes.addAll("Cashier No:0001                Vou No:0003\n\n".codeUnits);
+    bytes.addAll("Grilled Onion Cheese Burger        \$4.0 TX\n".codeUnits);
+    bytes.addAll("Mac Chicken meal                   \$2.0 TX\n".codeUnits);
+    bytes.addAll("Red tea                            \$3.0 TX\n".codeUnits);
+    bytes.addAll("Veggie                             \$3.0 TX\n".codeUnits);
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 41; i++) {
       bytes.addAll(
-          printer.text('Vegetable juice ${i + 1}                 \$1.0 TX'));
+          "Vegetable juice ${i + 1}                 \$1.0 TX\n".codeUnits);
     }
 
-    bytes.addAll(printer.text('\n'));
-    bytes.addAll(printer.text('Total:                        \$53.0 dollar'));
+    bytes.addAll("\n".codeUnits);
+    bytes.addAll("Total:                        \$53.0 dollar\n".codeUnits);
 
-    // Add QR code at the bottom
-    bytes.addAll(printer.qrcode('https://www.example.com', size: QRSize.Size4));
+    // Add the paper cut command
+    bytes.addAll([0x1D, 0x56, 0x41, 0x10]);
 
     await port.write(Uint8List.fromList(bytes));
-    // Add the paper cut command before adding the QR code
-    bytes.addAll(printer.cut());
     await port.close();
 
     _showSnackBar("Receipt printed and paper cut successfully");
