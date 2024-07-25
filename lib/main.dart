@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:usb_serial/usb_serial.dart';
 import 'dart:typed_data';
-import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:image/image.dart' as img;
+import 'package:flutter_esc_pos_utils/flutter_esc_pos_utils.dart';
 
 void main() {
   runApp(const MyApp());
@@ -81,46 +81,45 @@ class _PrinterScreenState extends State<PrinterScreen> {
     });
 
     final profile = await CapabilityProfile.load();
-    final generator = Generator(PaperSize.mm80, profile);
+    final printer = Generator(PaperSize.mm80, profile);
 
     List<int> bytes = [];
 
     // Load and add logo
     final img.Image? logo = await _loadImageAsset('assets/logo.png');
     if (logo != null) {
-      bytes += generator.imageRaster(logo, align: PosAlign.center);
+      bytes += printer.imageRaster(logo, align: PosAlign.center);
     }
 
-    bytes += generator.text('POS Store',
+    bytes += printer.text('POS Store',
         styles: const PosStyles(
             align: PosAlign.center,
             height: PosTextSize.size2,
             width: PosTextSize.size2));
-    bytes += generator.text('NO:12345678',
+    bytes += printer.text('NO:12345678',
         styles: const PosStyles(align: PosAlign.center));
-    bytes += generator.text('Tel:(02)2299-1599\n\n',
+    bytes += printer.text('Tel:(02)2299-1599\n\n',
         styles: const PosStyles(align: PosAlign.center));
-    bytes += generator.text('                                2013-01-01 13:33');
-    bytes += generator.text('Store No:0001                  ECR No:0001');
-    bytes += generator.text('Cashier No:0001                Vou No:0003\n\n');
-    bytes += generator.text('Grilled Onion Cheese Burger        \$4.0 TX');
-    bytes += generator.text('Mac Chicken meal                   \$2.0 TX');
-    bytes += generator.text('Red tea                            \$3.0 TX');
-    bytes += generator.text('Veggie                             \$3.0 TX');
+    bytes += printer.text('                                2013-01-01 13:33');
+    bytes += printer.text('Store No:0001                  ECR No:0001');
+    bytes += printer.text('Cashier No:0001                Vou No:0003\n\n');
+    bytes += printer.text('Grilled Onion Cheese Burger        \$4.0 TX');
+    bytes += printer.text('Mac Chicken meal                   \$2.0 TX');
+    bytes += printer.text('Red tea                            \$3.0 TX');
+    bytes += printer.text('Veggie                             \$3.0 TX');
 
     for (int i = 0; i < 41; i++) {
-      bytes +=
-          generator.text('Vegetable juice ${i + 1}                 \$1.0 TX');
+      bytes += printer.text('Vegetable juice ${i + 1}                 \$1.0 TX');
     }
 
-    bytes += generator.text('\n');
-    bytes += generator.text('Total:                        \$53.0 dollar');
+    bytes += printer.text('\n');
+    bytes += printer.text('Total:                        \$53.0 dollar');
 
     // Add QR code
-    bytes += generator.qrcode('https://www.example.com', size: QRSize.Size4);
+    bytes += printer.qrcode('https://www.example.com', size: QRSize.Size4);
 
     // Add the paper cut command
-    bytes += generator.cut();
+    bytes += printer.cut();
 
     await port.write(Uint8List.fromList(bytes));
     await port.close();
