@@ -24,7 +24,7 @@ class PrinterScreen extends StatefulWidget {
   const PrinterScreen({super.key});
 
   @override
-  State<PrinterScreen> createState() => _PrinterScreenState();
+  _PrinterScreenState createState() => _PrinterScreenState();
 }
 
 class _PrinterScreenState extends State<PrinterScreen> {
@@ -85,41 +85,42 @@ class _PrinterScreenState extends State<PrinterScreen> {
 
     List<int> bytes = [];
 
-    // Load and add logo
+    // Load and add logo at the top
     final img.Image? logo = await _loadImageAsset('assets/logo.png');
     if (logo != null) {
       bytes += printer.imageRaster(logo, align: PosAlign.center);
     }
 
-    bytes += printer.text('POS Store',
+    bytes.addAll(printer.text('POS Store',
         styles: const PosStyles(
             align: PosAlign.center,
             height: PosTextSize.size2,
-            width: PosTextSize.size2));
-    bytes += printer.text('NO:12345678',
-        styles: const PosStyles(align: PosAlign.center));
-    bytes += printer.text('Tel:(02)2299-1599\n\n',
-        styles: const PosStyles(align: PosAlign.center));
-    bytes += printer.text('                                2013-01-01 13:33');
-    bytes += printer.text('Store No:0001                  ECR No:0001');
-    bytes += printer.text('Cashier No:0001                Vou No:0003\n\n');
-    bytes += printer.text('Grilled Onion Cheese Burger        \$4.0 TX');
-    bytes += printer.text('Mac Chicken meal                   \$2.0 TX');
-    bytes += printer.text('Red tea                            \$3.0 TX');
-    bytes += printer.text('Veggie                             \$3.0 TX');
+            width: PosTextSize.size2)));
+    bytes.addAll(printer.text('NO:12345678',
+        styles: const PosStyles(align: PosAlign.center)));
+    bytes.addAll(printer.text('Tel:(02)2299-1599\n\n',
+        styles: const PosStyles(align: PosAlign.center)));
+    bytes.addAll(printer.text('                                2013-01-01 13:33'));
+    bytes.addAll(printer.text('Store No:0001                  ECR No:0001'));
+    bytes.addAll(printer.text('Cashier No:0001                Vou No:0003\n\n'));
+    bytes.addAll(printer.text('Grilled Onion Cheese Burger        \$4.0 TX'));
+    bytes.addAll(printer.text('Mac Chicken meal                   \$2.0 TX'));
+    bytes.addAll(printer.text('Red tea                            \$3.0 TX'));
+    bytes.addAll(printer.text('Veggie                             \$3.0 TX'));
 
     for (int i = 0; i < 41; i++) {
-      bytes += printer.text('Vegetable juice ${i + 1}                 \$1.0 TX');
+      bytes.addAll(
+          printer.text('Vegetable juice ${i + 1}                 \$1.0 TX'));
     }
 
-    bytes += printer.text('\n');
-    bytes += printer.text('Total:                        \$53.0 dollar');
+    bytes.addAll(printer.text('\n'));
+    bytes.addAll(printer.text('Total:                        \$53.0 dollar'));
 
-    // Add QR code
-    bytes += printer.qrcode('https://www.example.com', size: QRSize.Size4);
+    // Add the paper cut command before adding the QR code
+    bytes.addAll(printer.cut());
 
-    // Add the paper cut command
-    bytes += printer.cut();
+    // Add QR code at the bottom
+    bytes.addAll(printer.qrcode('https://www.example.com', size: QRSize.Size4));
 
     await port.write(Uint8List.fromList(bytes));
     await port.close();
