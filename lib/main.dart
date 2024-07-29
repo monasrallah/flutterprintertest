@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:usb_serial/usb_serial.dart';
 import 'dart:typed_data';
 
-import 'package:flutter/services.dart' show rootBundle;
-
 void main() {
   runApp(const MyApp());
 }
@@ -44,17 +42,6 @@ class _PrinterScreenState extends State<PrinterScreen> {
     });
   }
 
-  Future<List<int>> imageToBytes(String imagePath) async {
-    // Load image as ByteData
-    ByteData byteData = await rootBundle.load(imagePath);
-
-    // Convert ByteData to Uint8List
-    Uint8List imageBytes = byteData.buffer.asUint8List();
-
-    // Convert Uint8List to List<int>
-    return imageBytes.toList();
-  }
-
   Future<void> _printReceipt() async {
     if (targetPrinter == null) {
       _showSnackBar("PP-7600 Thermal Printer not found");
@@ -85,10 +72,6 @@ class _PrinterScreenState extends State<PrinterScreen> {
     });
 
     List<int> bytes = [];
-    bytes.addAll(await imageToBytes('assets/logo.png'));
-    bytes.addAll("\n ".codeUnits);
-    bytes.addAll("\n ".codeUnits);
-    bytes.addAll("\n ".codeUnits);
     bytes.addAll("POS Store\n".codeUnits);
     bytes.addAll("NO:12345678\nTel:(02)2299-1599\n\n".codeUnits);
     bytes
