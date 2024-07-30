@@ -37,7 +37,8 @@ dependencies:
   cupertino_icons: ^1.0.6
   usb_serial: ^0.5.2
   flutter_esc_pos_utils: ^0.1.8  # Check for the latest version
-  image: ^3.0.1 
+  image: ^3.3.0 
+  esc_pos_utils: ^1.1.0
 
 dev_dependencies:
   flutter_test:
